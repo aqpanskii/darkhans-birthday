@@ -244,6 +244,19 @@ html.js .rv.in{opacity:1;transform:none}
 .f-names{margin-top:clamp(26px,5vw,42px);font-family:var(--serif);font-size:clamp(1.3rem,4.4vw,1.9rem);color:var(--gold-hi)}
 .final .divider{margin:clamp(30px,6vw,46px) auto 0}
 
+.music{
+  position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:60;
+  width:46px;height:46px;display:grid;place-items:center;padding:0;
+  color:var(--gold-hi);background:rgba(6,20,18,.6);border:1px solid var(--line);border-radius:50%;cursor:pointer;
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  transition:background .35s var(--ease),color .35s var(--ease);
+}
+.music[hidden]{display:none}
+.music svg{width:22px;height:22px}
+.music .off{transition:opacity .3s}
+.music.on{background:var(--gold);color:var(--deep)}
+.music.on .off{opacity:0}
+
 @media (max-width:420px){
   .btn{padding-inline:26px}
   .cell{padding-inline:2px}
@@ -307,6 +320,12 @@ html.js .rv.in{opacity:1;transform:none}
 </div>
 
 <main>
+
+<button class="music" id="music" type="button" hidden aria-pressed="false" aria-label="Музыка / Музыка">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/><path class="off" d="M3 3l18 18"/>
+  </svg>
+</button>
 
 <!-- ============ HERO ============ -->
 <header class="hero" id="top">
@@ -455,7 +474,8 @@ html.js .rv.in{opacity:1;transform:none}
   var EVENT_TIME = '2026-10-31T17:00:00+05:00';           // Almaty time
   var MAP_QUERY  = 'кафе Береке, деревня Береке';          // or replace MAP_URL with an exact map link
   var MAP_URL    = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(MAP_QUERY);
-  var SHEET_URL  = 'https://script.google.com/macros/s/AKfycbxDwdyOIYN5SUXbyFTu4wVoMp4dMBIuFq2yiT5CqLwc7Gk9j_R91W5xk77JxFrlevvY/exec'; // Google Apps Script web app URL (ends with /exec)
+  var MUSIC_SRC  = '';                                     // e.g. 'music.mp3' (file next to index.html)
+  var SHEET_URL  = 'https://script.google.com/macros/s/AKfycbxDwdyOIYN5SUXbyFTu4wVoMp4dMBIuFq2yiT5CqLwc7Gk9j_R91W5xk77JxFrlevvY/exec';                                     // Google Apps Script web app URL (ends with /exec)
   var HOST_WHATSAPP = '';                                  // e.g. '77011234567' — enables "send answer via WhatsApp"
 
   var $ = function(s,r){return (r||document).querySelector(s)};
@@ -539,6 +559,36 @@ html.js .rv.in{opacity:1;transform:none}
     });
   }
   tick(); setInterval(tick, 1000);
+
+  /* ---- music ---- */
+  (function(){
+    var btn = $('#music');
+    if(!MUSIC_SRC) return;
+    var audio = new Audio(MUSIC_SRC);
+    audio.loop = true; audio.preload = 'none'; audio.volume = 0;
+    var timer;
+    function fadeTo(v, done){
+      clearInterval(timer);
+      var from = audio.volume, n = 0;
+      timer = setInterval(function(){
+        n++;
+        try{ audio.volume = Math.max(0, Math.min(1, from + (v-from)*n/15)); }catch(e){}
+        if(n>=15){ clearInterval(timer); if(done) done(); }
+      }, 60);
+    }
+    function setOn(on){ btn.classList.toggle('on', on); btn.setAttribute('aria-pressed', on ? 'true':'false'); }
+    btn.hidden = false;
+    btn.addEventListener('click', function(){
+      if(audio.paused){
+        audio.play().then(function(){ setOn(true); fadeTo(.6); }).catch(function(){});
+      } else {
+        setOn(false); fadeTo(0, function(){ audio.pause(); });
+      }
+    });
+    document.addEventListener('visibilitychange', function(){
+      if(document.hidden && !audio.paused){ audio.pause(); setOn(false); }
+    });
+  })();
 
   /* ---- RSVP ---- */
   var form = $('#form'), thanks = $('#thanks'), nameEl = $('#name'), guestsEl = $('#guests'), err = $('#err'), wa = $('#wa');

@@ -578,6 +578,19 @@ html.js .rv.in{opacity:1;transform:none}
     }
     function setOn(on){ btn.classList.toggle('on', on); btn.setAttribute('aria-pressed', on ? 'true':'false'); }
     btn.hidden = false;
+    function startMusic(){
+      if(audio.paused){
+        audio.play().then(function(){
+          setOn(true);
+          fadeTo(.6);
+        }).catch(function(){});
+      }
+    }
+    
+    startMusic();
+    
+    document.addEventListener('click', startMusic, {once:true});
+    document.addEventListener('touchstart', startMusic, {once:true});
     btn.addEventListener('click', function(){
       if(audio.paused){
         audio.play().then(function(){ setOn(true); fadeTo(.6); }).catch(function(){});
